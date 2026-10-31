@@ -7,9 +7,9 @@ export const dynamic = "force-dynamic";
 
 export default async function StallPage({ params }: { params: Promise<{ stallId: string }> }) {
   const { stallId } = await params;
-  const stall = getStall(stallId);
+  const stall = await getStall(stallId);
   if (!stall) notFound();
-  const items = stallItems(stallId);
+  const items = await stallItems(stallId);
 
   return (
     <main className={cls.page}>

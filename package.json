@@ -10,7 +10,7 @@
     "check:gemma": "tsx --env-file=.env.local scripts/check-gemma.mts",
     "check:devdraft": "tsx --env-file=.env.local scripts/check-devdraft.mts",
     "webhook:register": "tsx --env-file=.env.local scripts/register-webhook.mts",
-    "seed": "tsx scripts/seed-prices.mts",
+    "seed": "tsx --env-file=.env.local scripts/seed-prices.mts",
     "typecheck": "tsc --noEmit",
     "test": "tsx --conditions=react-server scripts/test-backend.mts",
     "keys": "bash scripts/refresh-keys.sh",
@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@google/genai": "^2.32.0",
-    "better-sqlite3": "^13.0.3",
+    "@libsql/client": "^0.18.0",
     "next": "15.5.28",
     "qrcode": "^1.5.4",
     "react": "19.1.0",
@@ -30,7 +30,6 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
-    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^20",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19",

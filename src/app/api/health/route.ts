@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { config, devdraftConfigured, simulateAllowed } from "@/lib/config";
 import { devdraftReadiness } from "@/lib/devdraft";
-import { db } from "@/lib/db";
+import { ensureSchema } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  db();
+  await ensureSchema();
   const ready = await devdraftReadiness();
   return NextResponse.json({
     app: "ok",

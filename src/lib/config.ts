@@ -5,7 +5,11 @@ function env(name: string, fallback = ""): string {
 }
 
 const devdraftMock = env("DEVDRAFT_MODE") === "mock";
-const localOrigin = env("LOCAL_ORIGIN", `http://127.0.0.1:${env("PORT", "3000")}`).replace(/\/$/, "");
+const serverless = Boolean(process.env.NETLIFY || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.VERCEL);
+const localOrigin = env(
+  "LOCAL_ORIGIN",
+  serverless ? env("PUBLIC_BASE_URL", "http://localhost:3000") : `http://127.0.0.1:${env("PORT", "3000")}`,
+).replace(/\/$/, "");
 
 export const config = {
   geminiApiKey: env("GEMINI_API_KEY"),

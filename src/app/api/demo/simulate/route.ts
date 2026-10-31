@@ -11,7 +11,7 @@ export async function POST(req: Request) {
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "itemId required" }, { status: 400 });
   try {
-    return NextResponse.json({ id: recordSimulatedPayment(parsed.data.itemId), simulated: true });
+    return NextResponse.json({ id: await recordSimulatedPayment(parsed.data.itemId), simulated: true });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 404 });
   }

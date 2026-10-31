@@ -36,7 +36,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
   if (!evt.type) describe(req, raw, "signed but no event type (encrypted payload?)");
-  const result = recordWebhookEvent(evt, config.devdraftMock ? "simulated" : "devdraft");
+  const result = await recordWebhookEvent(evt, config.devdraftMock ? "simulated" : "devdraft");
   console.info("[webhook] accepted", { type: evt.type, id: evt.id, duplicate: !result.stored });
   return NextResponse.json({ received: true, duplicate: !result.stored });
 }

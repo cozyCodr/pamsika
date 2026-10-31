@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { db, newId } from "@/lib/db";
+import { newId, run } from "@/lib/db";
 import { MARKETS } from "@/lib/staples";
 
 const Body = z.object({
@@ -15,6 +15,6 @@ export async function POST(req: Request) {
   if (!parsed.success) return NextResponse.json({ error: "Please fill in your stall name and market." }, { status: 400 });
   const { name, market, language, phone } = parsed.data;
   const id = newId("stall");
-  db().prepare("INSERT INTO stalls (id, name, market, language, phone) VALUES (?, ?, ?, ?, ?)").run(id, name, market, language, phone || null);
+  await run("INSERT INTO stalls (id, name, market, language, phone) VALUES (?, ?, ?, ?, ?)", [id, name, market, language, phone || null]);
   return NextResponse.json({ id, name, market, language });
 }

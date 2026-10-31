@@ -11,15 +11,12 @@ export async function POST(req: Request) {
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   const { stallId, kind, item, amountZmw } = parsed.data;
-  const stall = getStall(stallId);
+  const stall = await getStall(stallId);
   if (!stall) return NextResponse.json({ error: "Stall not found" }, { status: 404 });
-  const facts =
-    kind === "paid"
-      ? `Stall: ${stall.name}, ${stall.market}. Item: ${item ?? "goods"}. Amount: K${amountZmw ?? "?"}. Paid by mobile money.`
-      : (() => {
-          const s = salesForStall(stallId);
-          return `Stall: ${stall.name}, ${stall.market}. Payments today: ${s.count}. Total: K${s.totalZmw}. Top item: ${s.topItem ?? "none"}.`;
-        })();
+  const s = kind === "summary" ? await salesForStall(stallId) : null;
+  const facts = s
+    ? `Stall: ${stall.name}, ${stall.market}. Payments today: ${s.count}. Total: K${s.totalZmw}. Top item: ${s.topItem ?? "none"}.`
+    : `Stall: ${stall.name}, ${stall.market}. Item: ${item ?? "goods"}. Amount: K${amountZmw ?? "?"}. Paid by mobile money.`;
   try {
     return NextResponse.json({ text: await writeMessage(kind, stall.language, facts), language: stall.language });
   } catch (err) {

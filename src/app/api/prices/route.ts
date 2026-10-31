@@ -4,5 +4,5 @@ import { priceWatch } from "@/lib/queries";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  return NextResponse.json(priceWatch());
+  return NextResponse.json(await priceWatch());
 }

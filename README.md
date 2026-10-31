@@ -63,7 +63,9 @@ DevDraft ──webhook──▶ /api/devdraft/webhook (HMAC verify, idempotent) 
 Published boards ─▶ prices table ─▶ /prices (public Market Price Watch)
 ```
 
-Stack: Next.js 15 (App Router) · TypeScript · Tailwind CSS v4 · Zustand · SQLite (better-sqlite3) · zod.
+Stack: Next.js 15 (App Router) · TypeScript · Tailwind CSS v4 · Zustand · Turso / libSQL (hosted SQLite, with a local SQLite file fallback) · zod.
+
+Live payments reach the sales and stage screens by server push (SSE) when running as one server, and by 3-second polling everywhere, so they also work on serverless hosts such as Netlify.
 
 ## Run it
 

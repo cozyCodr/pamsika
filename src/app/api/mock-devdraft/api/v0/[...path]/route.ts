@@ -21,8 +21,8 @@ export async function GET(req: Request, { params }: Ctx) {
   if (denied) return denied;
   const path = (await params).path.join("/");
   if (path === "health") return NextResponse.json(mockHealth());
-  if (path === "balance") return NextResponse.json(mockBalance());
-  if (path === "webhooks") return NextResponse.json(mockListWebhooks());
+  if (path === "balance") return NextResponse.json(await mockBalance());
+  if (path === "webhooks") return NextResponse.json(await mockListWebhooks());
   return notFound("GET", path);
 }
 
@@ -37,17 +37,17 @@ export async function POST(req: Request, { params }: Ctx) {
     const name = String(form?.get("name") ?? "").trim();
     const price = Number(form?.get("price"));
     if (!name || !(price >= 0.01)) return NextResponse.json({ statusCode: 400, message: "name and price (>= 0.01) are required" }, { status: 400 });
-    return NextResponse.json(mockCreateProduct({ name, price, currency: String(form?.get("currency") ?? "USD") }), { status: 201 });
+    return NextResponse.json(await mockCreateProduct({ name, price, currency: String(form?.get("currency") ?? "USD") }), { status: 201 });
   }
 
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
 
   if (path === "payment-links") {
-    const res = mockCreateLink(body);
+    const res = await mockCreateLink(body);
     if ("error" in res) return NextResponse.json({ statusCode: res.status, message: res.error }, { status: res.status });
     return NextResponse.json(res.data, { status: 201 });
   }
-  if (path === "webhooks") return NextResponse.json(mockCreateWebhook(body), { status: 201 });
+  if (path === "webhooks") return NextResponse.json(await mockCreateWebhook(body), { status: 201 });
   if (segments[0] === "test-payment" && segments[2] === "refund" && segments[1]) {
     const res = await mockRefund(segments[1]);
     if ("error" in res) return NextResponse.json({ statusCode: res.status, message: res.error }, { status: res.status });

@@ -7,14 +7,14 @@ export const dynamic = "force-dynamic";
 
 export default async function Stage({ searchParams }: { searchParams: Promise<{ stall?: string }> }) {
   const { stall: stallParam } = await searchParams;
-  const stall = (stallParam && getStall(stallParam)) || latestStallWithItems() || null;
+  const stall = (stallParam ? await getStall(stallParam) : undefined) ?? (await latestStallWithItems()) ?? null;
   return (
     <StageView
       stall={stall ? { id: stall.id, name: stall.name, market: stall.market } : null}
       publicBaseUrl={config.publicBaseUrl}
       live={(await devdraftReadiness()).ok}
       mock={config.devdraftMock}
-      prices={priceWatch()}
+      prices={await priceWatch()}
     />
   );
 }

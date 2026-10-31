@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function MockCheckout({ params }: { params: Promise<{ linkId: string }> }) {
   if (!config.devdraftMock) notFound();
   const { linkId } = await params;
-  const link = mockGetLink(linkId);
+  const link = await mockGetLink(linkId);
   if (!link) notFound();
   const usd = link.amount ?? link.price ?? 0;
 

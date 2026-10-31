@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { readBoard } from "@/lib/ai";
-import { db, newId } from "@/lib/db";
+import { newId, run } from "@/lib/db";
 import { getStall } from "@/lib/queries";
 
 export const maxDuration = 60;
@@ -26,11 +26,11 @@ export async function POST(req: Request) {
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Please send a JPEG, PNG or WebP photo." }, { status: 400 });
   const { stallId, imageBase64, mimeType } = parsed.data;
-  if (!getStall(stallId)) return NextResponse.json({ error: "Set up your stall first." }, { status: 404 });
+  if (!(await getStall(stallId))) return NextResponse.json({ error: "Set up your stall first." }, { status: 404 });
   try {
     const items = await readBoard(imageBase64, mimeType);
     const boardId = newId("board");
-    db().prepare("INSERT INTO boards (id, stall_id, raw_json) VALUES (?, ?, ?)").run(boardId, stallId, JSON.stringify(items));
+    await run("INSERT INTO boards (id, stall_id, raw_json) VALUES (?, ?, ?)", [boardId, stallId, JSON.stringify(items)]);
     return NextResponse.json({ boardId, items });
   } catch (err) {
     const { message, status } = friendlyError(err);
