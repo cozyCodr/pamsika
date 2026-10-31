@@ -19,6 +19,10 @@ function friendlyError(err: unknown): { message: string; status: number } {
   }
   if (/API key|PERMISSION_DENIED|401|403/i.test(raw)) return { message: "The Gemma API key was rejected.", status: 401 };
   if (/GEMINI_API_KEY is not set/.test(raw)) return { message: "GEMINI_API_KEY is not set on the server.", status: 500 };
+  if (/"code":\s*(500|502|503|504|429)|INTERNAL|UNAVAILABLE|overloaded/i.test(raw)) {
+    return { message: "Gemma is busy right now. Please try that photo again in a moment.", status: 503 };
+  }
+  if (/Unable to process input image/i.test(raw)) return { message: "Gemma couldn't open that photo. Try taking it again.", status: 422 };
   return { message: raw.slice(0, 300), status: 502 };
 }
 

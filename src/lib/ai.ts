@@ -26,17 +26,20 @@ export type BoardItem = {
   suggestedPriceZmw: number | null;
 };
 
-const BOARD_PROMPT = `You read photos of handwritten price boards from markets and shops in Lusaka, Zambia.
+const BOARD_PROMPT = `You help market traders in Lusaka, Zambia turn photos into a price list.
+The photo is usually a handwritten price board, but it can also be products shown next to a price (a price tag, a sign or a screen), or a shelf with price labels.
 Prices are in Zambian Kwacha (K or ZMW). Return ONLY JSON, no prose, matching:
 {"items":[{"name":string,"unit":string|null,"price_zmw":number,"canonical_key":string|null,"confidence":number,"flag_reason":string|null,"suggested_price_zmw":number|null}]}
 Rules:
-- One entry per product line on the board, in board order. Skip headings and dates.
-- "name": short product name in Title Case, e.g. "Mealie meal". Put size/quantity in "unit", e.g. "25kg bag", "Box", "Bundle".
+- One entry per product with a visible price, in reading order. Skip headings and dates.
+- "name": short product name in Title Case, e.g. "Mealie meal". When a product's packaging is visible, name it from the label (brand and flavour, e.g. "Fanta Orange"), never use the price itself as the name.
+- Put size/quantity in "unit", e.g. "25kg bag", "Box", "Bundle", or the pack size printed on a bottle or packet (e.g. "500ml") when you can read it.
+- Pair each visible price with the product it belongs to. If one product and one price are shown together, they belong together.
 - "canonical_key": one of ${STAPLE_KEYS.join(", ")} when the item clearly is that staple in that unit, else null.
 - "confidence": 0-1, how sure you are you read the name and price correctly.
-- "flag_reason": a short, friendly sentence for the seller when the price looks like a likely typo for that item (e.g. a missing zero), the writing is unclear, or the line is duplicated; else null.
+- "flag_reason": a short, friendly sentence for the seller when the price looks like a likely typo for that item (e.g. a missing zero), the writing is unclear, or the line is duplicated; else null. Do not flag an item just because the photo is not a chalk board.
 - "suggested_price_zmw": your best guess of the intended price when you flag a likely typo; else null.
-- Never invent items that are not on the board. If the image is not a price board, return {"items":[]}.`;
+- Never invent items or prices that are not visible. If no prices are visible at all, return {"items":[]}.`;
 
 let client: GoogleGenAI | null = null;
 function ai(): GoogleGenAI {
@@ -53,13 +56,32 @@ function extractJson(text: string): unknown {
   return JSON.parse(cleaned.slice(start, end + 1));
 }
 
+const FALLBACK_MODEL: Record<string, string> = { "gemma-4-26b-a4b-it": "gemma-4-31b-it", "gemma-4-31b-it": "gemma-4-26b-a4b-it" };
+
+function isTransient(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return /"code":\s*(500|502|503|504|429)|INTERNAL|UNAVAILABLE|overloaded|ECONNRESET|fetch failed/i.test(msg);
+}
+
+// Google's API occasionally returns 500/503; retry once on the same model, then once on the other Gemma 4 model.
 async function generate(parts: Array<Record<string, unknown>>): Promise<string> {
-  const res = await ai().models.generateContent({
-    model: config.gemmaModel,
-    contents: [{ role: "user", parts }],
-    config: { thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL }, temperature: 0.2 },
-  });
-  return res.text ?? "";
+  const models = [config.gemmaModel, config.gemmaModel, FALLBACK_MODEL[config.gemmaModel] ?? config.gemmaModel];
+  let lastErr: unknown;
+  for (const [i, model] of models.entries()) {
+    try {
+      const res = await ai().models.generateContent({
+        model,
+        contents: [{ role: "user", parts }],
+        config: { thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL }, temperature: 0.2 },
+      });
+      return res.text ?? "";
+    } catch (err) {
+      lastErr = err;
+      if (!isTransient(err)) throw err;
+      if (i < models.length - 1) await new Promise((r) => setTimeout(r, 600 * (i + 1)));
+    }
+  }
+  throw lastErr;
 }
 
 function applyHeuristics(item: BoardItem): BoardItem {
