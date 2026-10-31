@@ -13,6 +13,7 @@ export default async function Stage({ searchParams }: { searchParams: Promise<{ 
       stall={stall ? { id: stall.id, name: stall.name, market: stall.market } : null}
       publicBaseUrl={config.publicBaseUrl}
       live={(await devdraftReadiness()).ok}
+      mock={config.devdraftMock}
       prices={priceWatch()}
     />
   );

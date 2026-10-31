@@ -47,6 +47,7 @@ Informal market traders who already use mobile money, and the shoppers who want 
 
 - **Sample prices:** `npm run seed` adds three markets of sample prices, marked `source='sample'` and shown with a "Sample data" label.
 - **Simulated payments:** the "Simulate a test payment" button only appears when DevDraft isn't connected (or `ALLOW_SIMULATE=1`). Those rows are labelled "Simulated", and no money moves.
+- **Simulated DevDraft (`DEVDRAFT_MODE=mock`):** a local stand-in for DevDraft's documented API (health, products, payment links, webhooks, balance, refund), with a simulated mobile-money checkout at `/mock-checkout/:id`. It sends HMAC-signed `payment.completed` webhooks to our real receiver, so signature checking and payment matching run end to end. The stage view shows "Simulated DevDraft · no real money", and payments are labelled "Simulated". We used it while our DevDraft account was waiting on KYC; set `DEVDRAFT_MODE=` (empty) for the real API.
 - **Kwacha to USD:** a fixed indicative rate (`ZMW_PER_USD`), because DevDraft products are priced in USD and payment links in USDC.
 - **Demo safety:** items above `DEMO_MAX_USD` (default $5) show no pay button, to stay within the hackathon's per-transaction limit.
 

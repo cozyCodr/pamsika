@@ -6,12 +6,12 @@ import { usePayments } from "@/components/usePayments";
 import { BrandMark, Icon, kwacha } from "@/components/ui";
 import { change, usePriceData, type PriceData } from "../prices/PriceList";
 
-type Props = { stall: { id: string; name: string; market: string } | null; publicBaseUrl: string; live: boolean; prices: PriceData };
+type Props = { stall: { id: string; name: string; market: string } | null; publicBaseUrl: string; live: boolean; mock: boolean; prices: PriceData };
 
 const panel = "rounded-2xl border border-night-line bg-night-2";
 const label = "text-[15px] font-semibold uppercase tracking-wide text-night-ink-2";
 
-export function StageView({ stall, publicBaseUrl, live, prices: initialPrices }: Props) {
+export function StageView({ stall, publicBaseUrl, live, mock, prices: initialPrices }: Props) {
   const { data, latest } = usePayments(stall?.id);
   const prices = usePriceData(initialPrices, 8000);
   const [usdc, setUsdc] = useState<string | null>(null);
@@ -44,8 +44,8 @@ export function StageView({ stall, publicBaseUrl, live, prices: initialPrices }:
           <span className="hidden text-lg text-night-ink-2 md:inline">One photo. A mobile-money shop. A fairer market.</span>
         </div>
         <span className="flex items-center gap-2 text-base text-night-ink-2">
-          <span className={`h-2 w-2 rounded-full ${live ? "bg-[#3fb768]" : "bg-[#e0a43a]"}`} aria-hidden="true" />
-          {live ? "Live · DevDraft production" : "Preview · DevDraft not connected"}
+          <span className={`h-2 w-2 rounded-full ${live && !mock ? "bg-[#3fb768]" : "bg-[#e0a43a]"}`} aria-hidden="true" />
+          {mock ? "Simulated DevDraft · no real money" : live ? "Live · DevDraft production" : "Preview · DevDraft not connected"}
         </span>
       </header>
 

@@ -4,10 +4,15 @@ function env(name: string, fallback = ""): string {
   return (process.env[name] ?? fallback).trim();
 }
 
+const devdraftMock = env("DEVDRAFT_MODE") === "mock";
+const localOrigin = env("LOCAL_ORIGIN", `http://127.0.0.1:${env("PORT", "3000")}`).replace(/\/$/, "");
+
 export const config = {
   geminiApiKey: env("GEMINI_API_KEY"),
   gemmaModel: env("GEMMA_MODEL", "gemma-4-26b-a4b-it"),
-  devdraftBaseUrl: env("DEVDRAFT_BASE_URL", "https://api.devdraft.ai").replace(/\/$/, ""),
+  devdraftMock,
+  localOrigin,
+  devdraftBaseUrl: devdraftMock ? `${localOrigin}/api/mock-devdraft` : env("DEVDRAFT_BASE_URL", "https://api.devdraft.ai").replace(/\/$/, ""),
   devdraftClientKey: env("DEVDRAFT_CLIENT_KEY"),
   devdraftClientSecret: env("DEVDRAFT_CLIENT_SECRET"),
   devdraftWebhookSecret: env("DEVDRAFT_WEBHOOK_SECRET"),

@@ -11,7 +11,7 @@ export async function GET() {
   return NextResponse.json({
     app: "ok",
     gemma: { model: config.gemmaModel, keySet: Boolean(config.geminiApiKey) },
-    devdraft: { configured: devdraftConfigured(), ready: ready.ok, message: ready.message },
+    devdraft: { mode: config.devdraftMock ? "mock" : "live", configured: devdraftConfigured(), ready: ready.ok, message: ready.message },
     webhookSecretSet: Boolean(config.devdraftWebhookSecret),
     simulateAllowed: simulateAllowed(ready.ok),
     publicBaseUrl: config.publicBaseUrl,

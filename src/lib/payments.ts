@@ -44,12 +44,12 @@ function amountFrom(obj: Record<string, unknown> | undefined): number | null {
 
 export type DevDraftEvent = { id?: string; type?: string; created?: string; data?: { object?: Record<string, unknown> } };
 
-export function recordWebhookEvent(evt: DevDraftEvent): { stored: boolean; paymentId?: string } {
+export function recordWebhookEvent(evt: DevDraftEvent, source: "devdraft" | "simulated" = "devdraft"): { stored: boolean; paymentId?: string } {
   const type = evt.type ?? "unknown";
   if (!type.startsWith("payment.")) {
     db().prepare(
-      "INSERT OR IGNORE INTO payments (id, event_id, type, status, source, payload) VALUES (?, ?, ?, ?, 'devdraft', ?)",
-    ).run(newId("evt"), evt.id ?? null, type, String(evt.data?.object?.status ?? type), JSON.stringify(evt));
+      "INSERT OR IGNORE INTO payments (id, event_id, type, status, source, payload) VALUES (?, ?, ?, ?, ?, ?)",
+    ).run(newId("evt"), evt.id ?? null, type, String(evt.data?.object?.status ?? type), source, JSON.stringify(evt));
     return { stored: true };
   }
   const item = findItem(evt.data ?? evt);
@@ -58,9 +58,9 @@ export function recordWebhookEvent(evt: DevDraftEvent): { stored: boolean; payme
   const id = newId("pay");
   const res = db()
     .prepare(
-      "INSERT OR IGNORE INTO payments (id, event_id, stall_id, item_id, type, status, amount_usd, source, payload) VALUES (?, ?, ?, ?, ?, ?, ?, 'devdraft', ?)",
+      "INSERT OR IGNORE INTO payments (id, event_id, stall_id, item_id, type, status, amount_usd, source, payload) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
     )
-    .run(id, evt.id ?? id, item?.stall_id ?? null, item?.id ?? null, type, status, amountUsd, JSON.stringify(evt));
+    .run(id, evt.id ?? id, item?.stall_id ?? null, item?.id ?? null, type, status, amountUsd, source, JSON.stringify(evt));
   if (res.changes === 0) return { stored: false };
   publishPayment({
     kind: "payment",
@@ -70,7 +70,7 @@ export function recordWebhookEvent(evt: DevDraftEvent): { stored: boolean; payme
     amountUsd,
     amountZmw: item?.price_zmw ?? (amountUsd ? usdToZmw(amountUsd) : null),
     status,
-    source: "devdraft",
+    source,
     at: new Date().toISOString(),
   });
   return { stored: true, paymentId: id };
