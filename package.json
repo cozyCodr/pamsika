@@ -6,22 +6,38 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "check:gemma": "tsx --env-file=.env.local scripts/check-gemma.mts",
+    "check:devdraft": "tsx --env-file=.env.local scripts/check-devdraft.mts",
+    "webhook:register": "tsx --env-file=.env.local scripts/register-webhook.mts",
+    "seed": "tsx scripts/seed-prices.mts",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --conditions=react-server scripts/test-backend.mts"
   },
   "dependencies": {
+    "@google/genai": "^2.32.0",
+    "better-sqlite3": "^13.0.3",
+    "next": "15.5.28",
+    "qrcode": "^1.5.4",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "next": "15.5.28"
+    "server-only": "^0.0.1",
+    "zod": "^4.6.7",
+    "zustand": "^5.0.16"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^20",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4",
     "eslint": "^9",
     "eslint-config-next": "15.5.28",
-    "@eslint/eslintrc": "^3"
-  }
+    "tailwindcss": "^4",
+    "tsx": "^4.23.15",
+    "typescript": "^5"
+  },
+  "license": "MIT"
 }
