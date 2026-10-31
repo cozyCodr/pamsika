@@ -12,7 +12,9 @@
     "webhook:register": "tsx --env-file=.env.local scripts/register-webhook.mts",
     "seed": "tsx scripts/seed-prices.mts",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --conditions=react-server scripts/test-backend.mts"
+    "test": "tsx --conditions=react-server scripts/test-backend.mts",
+    "keys": "bash scripts/refresh-keys.sh",
+    "status": "tsx --env-file=.env.local scripts/status.mts"
   },
   "dependencies": {
     "@google/genai": "^2.32.0",
