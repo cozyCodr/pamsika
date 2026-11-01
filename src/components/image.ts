@@ -1,7 +1,28 @@
 "use client";
 
+function looksHeic(file: File): boolean {
+  return /image\/hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name);
+}
+
+// Most browsers outside Safari can't decode iPhone HEIC photos, so those are decoded with libheif (loaded only when needed).
+async function decode(file: File): Promise<ImageBitmap> {
+  try {
+    return await createImageBitmap(file);
+  } catch (err) {
+    const { heicTo, isHeic } = await import("heic-to/next");
+    if (!looksHeic(file) && !(await isHeic(file))) throw err;
+    try {
+      return await heicTo({ blob: file, type: "bitmap" });
+    } catch {
+      throw new Error("Couldn't open that iPhone photo. Try taking it again, or choose a JPEG.");
+    }
+  }
+}
+
 export async function compressImage(file: File, maxSide = 1280, quality = 0.82): Promise<{ base64: string; mimeType: "image/jpeg"; previewUrl: string }> {
-  const bitmap = await createImageBitmap(file);
+  const bitmap = await decode(file).catch((err) => {
+    throw err instanceof Error && err.message.startsWith("Couldn't") ? err : new Error("Couldn't open that photo. Please choose a JPEG, PNG or HEIC image.");
+  });
   const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
   const w = Math.round(bitmap.width * scale);
   const h = Math.round(bitmap.height * scale);

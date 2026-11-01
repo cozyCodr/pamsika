@@ -70,12 +70,12 @@ export default function Snap() {
   const inputs = (
     <>
       <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} />
-      <input ref={uploadRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} />
+      <input ref={uploadRef} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} />
     </>
   );
 
   if (preview) {
-    const heading = reading ? "Reading your board…" : error ? "Couldn't read the board" : done ? `Found ${found.length} items` : "Reading your board…";
+    const heading = reading ? "Reading your board…" : error ? "Couldn't read the board" : done ? `Found ${found.length} ${found.length === 1 ? "item" : "items"}` : "Reading your board…";
     const detail = reading ? "Gemma 4 is reading the prices. This takes a few seconds." : found.length ? `${Math.min(shown, found.length)} of ${found.length} items` : "";
     const readBy = fallbackModel ? modelLabel(fallbackModel) : "Gemma 4";
     return (
