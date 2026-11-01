@@ -38,10 +38,10 @@ export async function POST(req: Request) {
   const { stallId, imageBase64, mimeType } = parsed.data;
   if (!(await getStall(stallId))) return NextResponse.json({ error: "Set up your stall first." }, { status: 404 });
   try {
-    const items = await readBoard(imageBase64, mimeType);
+    const { items, model } = await readBoard(imageBase64, mimeType);
     const boardId = newId("board");
     await run("INSERT INTO boards (id, stall_id, raw_json) VALUES (?, ?, ?)", [boardId, stallId, JSON.stringify(items)]);
-    return NextResponse.json({ boardId, items });
+    return NextResponse.json({ boardId, items, model, gemma: model.startsWith("gemma") });
   } catch (err) {
     const { message, status } = friendlyError(err);
     return NextResponse.json({ error: message }, { status });

@@ -4,10 +4,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { compressImage } from "@/components/image";
-import { BottomNav, Brand, Button, ErrorNote, Icon, LargeTitle, cls, kwacha } from "@/components/ui";
+import { BottomNav, Brand, Button, ErrorNote, Icon, LargeTitle, Notice, cls, kwacha } from "@/components/ui";
 import { useStall, type DraftItem } from "@/store/stall";
 
 type ReadItem = Omit<DraftItem, "key" | "resolved">;
+
+function modelLabel(model: string): string {
+  return /flash-lite/i.test(model) ? "Gemini Flash-Lite" : /flash/i.test(model) ? "Gemini Flash" : model;
+}
 
 export default function Snap() {
   const router = useRouter();
@@ -21,6 +25,7 @@ export default function Snap() {
   const [shown, setShown] = useState(0);
   const [reading, setReading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fallbackModel, setFallbackModel] = useState<string | null>(null);
 
   useEffect(() => {
     if (hydrated && !stall) router.replace("/start");
@@ -37,6 +42,7 @@ export default function Snap() {
     setError(null);
     setFound([]);
     setShown(0);
+    setFallbackModel(null);
     try {
       const img = await compressImage(file);
       setPreview(img.previewUrl);
@@ -50,6 +56,7 @@ export default function Snap() {
       setReading(false);
       if (!res.ok) return setError(json.error ?? "Could not read the board");
       if (!json.items.length) return setError("Gemma couldn't find prices in that photo. Try again closer, with the whole board in view.");
+      if (!json.gemma) setFallbackModel(json.model);
       setBoard(json.boardId, img.previewUrl, json.items);
       setFound(json.items);
     } catch (err) {
@@ -70,6 +77,7 @@ export default function Snap() {
   if (preview) {
     const heading = reading ? "Reading your board…" : error ? "Couldn't read the board" : done ? `Found ${found.length} items` : "Reading your board…";
     const detail = reading ? "Gemma 4 is reading the prices. This takes a few seconds." : found.length ? `${Math.min(shown, found.length)} of ${found.length} items` : "";
+    const readBy = fallbackModel ? modelLabel(fallbackModel) : "Gemma 4";
     return (
       <main className={cls.page}>
         <header className="flex min-h-12 items-center justify-between px-2 pt-2">
@@ -83,7 +91,7 @@ export default function Snap() {
           >
             Cancel
           </button>
-          <span className="pr-4 text-footnote text-ink-2">Gemma 4</span>
+          <span className="pr-4 text-footnote text-ink-2">{readBy}</span>
         </header>
 
         <div className={`${cls.pad} pt-2`}>
@@ -115,6 +123,12 @@ export default function Snap() {
                 </li>
               ))}
             </ul>
+          </div>
+        )}
+
+        {fallbackModel && found.length > 0 && (
+          <div className={`${cls.pad} pt-3`}>
+            <Notice>Gemma 4 couldn&apos;t open photos just now, so {modelLabel(fallbackModel)} read this one. Check the prices before you publish.</Notice>
           </div>
         )}
 

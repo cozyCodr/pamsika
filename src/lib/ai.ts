@@ -63,8 +63,15 @@ function isTransient(err: unknown): boolean {
   return /"code":\s*(500|502|503|504|429)|INTERNAL|UNAVAILABLE|overloaded|ECONNRESET|fetch failed/i.test(msg);
 }
 
+function isRejectedImage(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return /INVALID_ARGUMENT|"code":\s*400/i.test(msg);
+}
+
+export type Generated = { text: string; model: string };
+
 // Google's API occasionally returns 500/503; retry once on the same model, then once on the other Gemma 4 model.
-async function generate(parts: Array<Record<string, unknown>>): Promise<string> {
+async function generateWithGemma(parts: Array<Record<string, unknown>>): Promise<Generated> {
   const models = [config.gemmaModel, config.gemmaModel, FALLBACK_MODEL[config.gemmaModel] ?? config.gemmaModel];
   let lastErr: unknown;
   for (const [i, model] of models.entries()) {
@@ -74,7 +81,7 @@ async function generate(parts: Array<Record<string, unknown>>): Promise<string> 
         contents: [{ role: "user", parts }],
         config: { thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL }, temperature: 0.2 },
       });
-      return res.text ?? "";
+      return { text: res.text ?? "", model };
     } catch (err) {
       lastErr = err;
       if (!isTransient(err)) throw err;
@@ -82,6 +89,23 @@ async function generate(parts: Array<Record<string, unknown>>): Promise<string> 
     }
   }
   throw lastErr;
+}
+
+// Gemma 4 on the Gemini API sometimes rejects every image with 400 INVALID_ARGUMENT while text still works.
+// Photos then go to PHOTO_FALLBACK_MODEL, and the caller is told which model read them so the UI can say so.
+async function generate(parts: Array<Record<string, unknown>>, { photo = false } = {}): Promise<Generated> {
+  try {
+    return await generateWithGemma(parts);
+  } catch (err) {
+    if (!photo || !config.photoFallbackModel || !isRejectedImage(err)) throw err;
+    console.warn(`[ai] Gemma rejected the photo; reading it with ${config.photoFallbackModel} instead`);
+    const res = await ai().models.generateContent({
+      model: config.photoFallbackModel,
+      contents: [{ role: "user", parts }],
+      config: { thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL }, temperature: 0.2 },
+    });
+    return { text: res.text ?? "", model: config.photoFallbackModel };
+  }
 }
 
 function applyHeuristics(item: BoardItem): BoardItem {
@@ -101,15 +125,15 @@ function applyHeuristics(item: BoardItem): BoardItem {
   return item;
 }
 
-export async function readBoard(imageBase64: string, mimeType: string): Promise<BoardItem[]> {
+export async function readBoard(imageBase64: string, mimeType: string): Promise<{ items: BoardItem[]; model: string }> {
   const imagePart = { inlineData: { mimeType, data: imageBase64 } };
   let lastError = "";
   for (let attempt = 0; attempt < 2; attempt++) {
     const prompt = attempt === 0 ? BOARD_PROMPT : `${BOARD_PROMPT}\nYour previous answer was invalid (${lastError}). Return valid JSON only.`;
-    const text = await generate([imagePart, { text: prompt }]);
+    const { text, model } = await generate([imagePart, { text: prompt }], { photo: true });
     try {
       const parsed = BoardSchema.parse(extractJson(text));
-      return parsed.items.map((i) =>
+      const items = parsed.items.map((i) =>
         applyHeuristics({
           name: i.name,
           unit: i.unit ?? "",
@@ -120,6 +144,7 @@ export async function readBoard(imageBase64: string, mimeType: string): Promise<
           suggestedPriceZmw: i.suggested_price_zmw ?? null,
         }),
       );
+      return { items, model };
     } catch (err) {
       lastError = err instanceof Error ? err.message.slice(0, 300) : "invalid JSON";
     }
@@ -135,7 +160,7 @@ export async function writeMessage(kind: "paid" | "summary", language: string, f
     kind === "paid"
       ? "Write a warm one or two sentence WhatsApp message from a market trader confirming a customer's payment."
       : "Write a short, encouraging end-of-day WhatsApp summary (max 3 lines) for a market trader about today's sales.";
-  const text = await generate([{ text: `${task}\nWrite it in ${lang}. Use only these facts, do not invent numbers:\n${facts}\nReturn only the message text.` }]);
+  const { text } = await generate([{ text: `${task}\nWrite it in ${lang}. Use only these facts, do not invent numbers:\n${facts}\nReturn only the message text.` }]);
   return text.trim();
 }
 

@@ -41,7 +41,7 @@ Informal market traders who already use mobile money, and the shoppers who want 
 
 ## Models used
 
-- `gemma-4-26b-a4b-it` through the Gemini API (`@google/genai`), with thinking set to minimal. You can switch to `gemma-4-31b-it` with `GEMMA_MODEL`.
+- `gemma-4-26b-a4b-it` through the Gemini API (`@google/genai`), with thinking set to minimal. You can switch to `gemma-4-31b-it` with `GEMMA_MODEL`. If Gemma rejects a photo outright (Google has had spells where Gemma 4 returns 400 for every image while text works), the photo is read by `gemini-3.1-flash-lite` instead and the app says so on screen. Set `PHOTO_FALLBACK_MODEL=off` to turn that off.
 
 ## What's mocked, sample or limited (labelled in the UI)
 

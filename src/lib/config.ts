@@ -14,6 +14,9 @@ const localOrigin = env("LOCAL_ORIGIN", serverless ? publicBaseUrl : `http://127
 export const config = {
   geminiApiKey: env("GEMINI_API_KEY"),
   gemmaModel: env("GEMMA_MODEL", "gemma-4-26b-a4b-it"),
+  // Used only when Gemma rejects a photo outright. Gemma 4 is free; Flash-Lite is the cheapest paid model that reads photos well.
+  // Pinned rather than a -latest alias so the price can't change under us. Set PHOTO_FALLBACK_MODEL=off to disable.
+  photoFallbackModel: env("PHOTO_FALLBACK_MODEL", "gemini-3.1-flash-lite").replace(/^off$/, ""),
   devdraftMock,
   localOrigin,
   devdraftBaseUrl: devdraftMock ? `${localOrigin}/api/mock-devdraft` : env("DEVDRAFT_BASE_URL", "https://api.devdraft.ai").replace(/\/$/, ""),
