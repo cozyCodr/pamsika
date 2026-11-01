@@ -5,11 +5,11 @@ function env(name: string, fallback = ""): string {
 }
 
 const devdraftMock = env("DEVDRAFT_MODE") === "mock";
-const serverless = Boolean(process.env.NETLIFY || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.VERCEL);
-const localOrigin = env(
-  "LOCAL_ORIGIN",
-  serverless ? env("PUBLIC_BASE_URL", "http://localhost:3000") : `http://127.0.0.1:${env("PORT", "3000")}`,
-).replace(/\/$/, "");
+// On a hosted deploy the platform's own site URL wins over PUBLIC_BASE_URL, which may still point at a dev tunnel.
+const deploySiteUrl = (process.env.DEPLOY_SITE_URL ?? "").trim();
+const publicBaseUrl = (deploySiteUrl || env("PUBLIC_BASE_URL", "http://localhost:3000")).replace(/\/$/, "");
+const serverless = Boolean(deploySiteUrl || process.env.NETLIFY || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.VERCEL);
+const localOrigin = env("LOCAL_ORIGIN", serverless ? publicBaseUrl : `http://127.0.0.1:${env("PORT", "3000")}`).replace(/\/$/, "");
 
 export const config = {
   geminiApiKey: env("GEMINI_API_KEY"),
@@ -24,7 +24,7 @@ export const config = {
   devdraftFallbackLinkType: env("DEVDRAFT_FALLBACK_LINK_TYPE", "COLLECTION"),
   zmwPerUsd: Number(env("ZMW_PER_USD", "25")) || 25,
   demoMaxUsd: Number(env("DEMO_MAX_USD", "5")) || 5,
-  publicBaseUrl: env("PUBLIC_BASE_URL", "http://localhost:3000").replace(/\/$/, ""),
+  publicBaseUrl,
   allowSimulate: env("ALLOW_SIMULATE") === "1",
 };
 

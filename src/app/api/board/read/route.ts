@@ -23,6 +23,12 @@ function friendlyError(err: unknown): { message: string; status: number } {
     return { message: "Gemma is busy right now. Please try that photo again in a moment.", status: 503 };
   }
   if (/Unable to process input image/i.test(raw)) return { message: "Gemma couldn't open that photo. Try taking it again.", status: 422 };
+  if (/INVALID_ARGUMENT|"code":\s*400/i.test(raw)) {
+    console.error("[board/read] Gemini rejected the image request:", raw.slice(0, 300));
+    return { message: "Gemma couldn't read photos right now. Please try again in a few minutes.", status: 502 };
+  }
+  console.error("[board/read] unexpected Gemma error:", raw.slice(0, 300));
+  if (/^\s*\{/.test(raw)) return { message: "Gemma couldn't read that photo. Please try again.", status: 502 };
   return { message: raw.slice(0, 300), status: 502 };
 }
 
